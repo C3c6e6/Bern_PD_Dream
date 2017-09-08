@@ -21,32 +21,33 @@ featureReductionData <- function(kMedoids, dRange = (1:50)/100) {
     output
 }
 
+
 load("data/training_corrected.Rda")
 maxD = as.numeric(readLines("params/maxD"))
-eMatrix = exprs(training)
+pdf("results/plots/reduce_features.pdf", width=12, height=6)
 
+featureTable = fData(training)
+featureTypes = unique(featureTable$type)
+
+eMatrix = exprs(training)
 distances = corDist(eMatrix)
 maxK = nrow(eMatrix) - 1
-
 kMedoids = optimalKMedoids(distances, 2:maxK)
 clusters = kMedoids$optimalResult$clustering
-
-pdf("results/plots/reduce_features.pdf", width=12, height=6)
 plot(hclust(distances), cex=0.4)
-
 reduction = featureReductionData(kMedoids)
-ggplot(data=reduction, aes(x=k, y=d, fill=nReduced)) + geom_raster()
+p = ggplot(data=reduction, aes(x=k, y=d, fill=nReduced)) + geom_raster()
+print(p)
 reductionMax = tapply(reduction$nReduced, reduction$d, max)
 maxTable = data.frame(nReduced = reductionMax, 
     d = as.numeric(names(reductionMax)))
-ggplot(data=maxTable, aes(x=d, y=nReduced)) + geom_point() + geom_line()
-dev.off()
-
+p = ggplot(data=maxTable, aes(x=d, y=nReduced)) + geom_point() + geom_line()
+print(p)
 reduction = reduction[reduction$d <= maxD,]
 k = reduction$k[which.max(reduction$nReduced)]
 kString = sprintf("k= %d", k)
 selectedFeatures = kMedoids$allResults[[kString]]$medoids
-message("Selected features: ")
-writeLines(selectedFeatures, con = stderr())
+dev.off()
+
 training = training[selectedFeatures,]
 save(training, file = "data/training_reduced.Rda")
