@@ -1,9 +1,9 @@
 library(Biobase)
 library(SetTools)
+library(e1071)
 source("functions.R")
 
-table2ExpressionSet <- function(featureTab) {
-    motionFeatures = colnames(featureTab)[38:ncol(featureTab)]
+table2ExpressionSet <- function(featureTab, motionFeatures) {
     metaFeatures = colnames(featureTab) %d% motionFeatures
     eMatrix = t(featureTab[,motionFeatures])
     pheno = featureTab[,metaFeatures]
@@ -12,7 +12,19 @@ table2ExpressionSet <- function(featureTab) {
     pheno$diagnosis.year = as.Date(ISOdate(pheno$diagnosis.year, 1, 1))
     pheno$onset.year = as.Date(ISOdate(pheno$onset.year, 1, 1))
     pheno$timeSinceOnset = as.numeric(pheno$createdOn_event - pheno$onset.year)
-    training = ExpressionSet(eMatrix, phenoData = aDataFrame(pheno))
+    features = data.frame(name = rownames(eMatrix), type = "original", 
+        description = "original feature", row.names = rownames(eMatrix),
+        stringsAsFactors = FALSE)
+    logFeatures = grepl("^log_", rownames(eMatrix))
+    sigmoidFeatures = grepl("^sigm_", rownames(eMatrix))
+    features$type[logFeatures] = "log-transformed"
+    features$type[sigmoidFeatures] = "sigmoid-transformed"
+    features$description[logFeatures] = sprintf("pseudo-log transform of %s",
+        sub("^log_", "", rownames(eMatrix)[logFeatures]))
+    features$description[sigmoidFeatures] = sprintf("sigmoid transform of %s",
+         sub("^sigm_", "", rownames(eMatrix)[sigmoidFeatures]))
+    training = ExpressionSet(eMatrix, phenoData = aDataFrame(pheno),
+        featureData = aDataFrame(features))
     naMatrix = t(apply(exprs(training), 1, is.na))
     allNAfeatures = apply(naMatrix, 1, all)
     allNAobservations = apply(naMatrix, 1, all)
@@ -44,16 +56,29 @@ featureTab = featureTab[!exclude,]
 
 featureTab$phoneInf_event = sub("\\s*\\(.+", "", featureTab$phoneInf_event)
 
-logFeatures = readLines("params/logFeatures")
-for (feature in logFeatures) {
-    newName = sprintf("log%s", feature)
-    featureTab[[newName]] = logTransform(featureTab[[feature]])
+motionFeatures = colnames(featureTab)[38:ncol(featureTab)]
+for (feature in motionFeatures) {
+    transforms = list()
+    transforms[[feature]] = featureTab[[feature]]
+    if (all(is.na(transforms[[feature]]))) {
+        next
+    }
     featureTab[[feature]] = NULL
+    logName = sprintf("log_%s", feature)
+    transforms[[logName]] = logTransform(transforms[[feature]])
+    sigmoidName = sprintf("sigm_%s", feature)
+    transforms[[sigmoidName]] = sigmoid(transforms[[feature]])
+    kurtosisValues = sapply(transforms, kurtosis, na.rm = TRUE)
+    bestTransform = which.min(kurtosisValues)
+    bestName = names(transforms)[bestTransform]
+    featureTab[[bestName]] = transforms[[bestName]]
 }
+motionFeatures = colnames(featureTab)[38:ncol(featureTab)] #update motionFeatures
 
-
-training = table2ExpressionSet(featureTab[!duplicated(featureTab$healthCode),])
-test = table2ExpressionSet(featureTab[duplicated(featureTab$healthCode),])
+training = table2ExpressionSet(featureTab[!duplicated(featureTab$healthCode),],
+    motionFeatures)
+test = table2ExpressionSet(featureTab[duplicated(featureTab$healthCode),],
+    motionFeatures)
 
 save(training, file="data/training.Rda")
 save(test, file="data/test.Rda")
