@@ -23,7 +23,6 @@ getFormula <- function(modelData) {
 }
 
 correctValues <- function(modelData, formulaString) {
-    message(formulaString)
     modelFormula = as.formula(formulaString)
     if (length(all.vars(modelFormula)) == 1) {
         modelData$feature
