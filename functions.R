@@ -55,6 +55,14 @@ logTransform <- function(x, b = 2) {
     }
     if (any(positiveValues)) {
         y[positiveValues] = log(addFloor(x[positiveValues], b), base = b)
+        if (any(negativeValues)) {
+            offset = max(y[negativeValues]) - min(y[positiveValues])
+            y[positiveValues] = y[positiveValues] + offset
+        }
     }
     y
+}
+
+sigmoid <- function(x) {
+    x/(1+abs(x))
 }
