@@ -1,7 +1,6 @@
 
 rule dataset:
-    input: "data/features_clip_v2.Rda", "functions.R", "params/logFeatures", 
-        script = "dataset.R"
+    input: "data/features_clip_v2.Rda", "functions.R", script = "dataset.R"
     output: expand("data/{set}.Rda", set = [ "training", "test" ] )
     shell: "Rscript {input.script}"
 
@@ -33,15 +32,6 @@ rule pca:
         d=`dirname {output}`
         mkdir -p $d
         Rscript {input.script} {input.data} {output} professional.diagnosis
-        '''
-
-rule histograms:
-    input: "data/training_corrected.Rda", script = "histograms.R"
-    output: "results/plots/histograms.pdf"
-    shell: '''
-        d=`dirname {output}`
-        mkdir -p $d
-        Rscript {input.script}
         '''
 
 rule reduceFeatures:
@@ -79,7 +69,8 @@ rule exhaustiveModel:
     shell: "Rscript {input.script}"
 
 rule ROC:
-    input: rules.gaModel.output, rules.splsda.output, "data/test_corrected.Rda",
+    input: rules.gaModel.output, rules.splsda.output, 
+        rules.exhaustiveModel.output, "data/test_corrected.Rda",
         script = "auroc.R"
     output: "results/plots/ROCs.pdf"
     shell: '''
