@@ -17,3 +17,6 @@ data/training_reduced.Rda
 *.Rproj
 .Rproj.user
 .Rhistory
+.Snakefile.swp
+data/glm_full.Rda
+data/glm_stepped.Rda
