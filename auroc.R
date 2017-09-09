@@ -29,4 +29,12 @@ load("data/glm_exhaustive.Rda")
 gaAUC = getAUC(model, test, "glmulti exhaustive")
 message("glmulti exhaustive: ", gaAUC)
 
+load("data/glm_full.Rda")
+gaAUC = getAUC(model, test, "all features")
+message("all features: ", gaAUC)
+
+load("data/glm_stepped.Rda")
+gaAUC = getAUC(model, test, "stepped")
+message("stepped model: ", gaAUC)
+
 dev.off()

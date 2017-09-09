@@ -68,8 +68,13 @@ rule exhaustiveModel:
     output: "data/glm_exhaustive.Rda"
     shell: "Rscript {input.script}"
 
+rule fullModel:
+    input: "data/training_corrected.Rda", script = "full_model.R"
+    output: "data/glm_full.Rda", "data/glm_stepped.Rda"
+    shell: "Rscript {input.script}"
+
 rule ROC:
-    input: rules.gaModel.output, rules.splsda.output, 
+    input: rules.gaModel.output, rules.splsda.output, rules.fullModel.output,
         rules.exhaustiveModel.output, "data/test_corrected.Rda",
         script = "auroc.R"
     output: "results/plots/ROCs.pdf"
