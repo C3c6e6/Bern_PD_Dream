@@ -80,5 +80,9 @@ training = table2ExpressionSet(featureTab[!duplicated(featureTab$healthCode),],
 test = table2ExpressionSet(featureTab[duplicated(featureTab$healthCode),],
     motionFeatures)
 
+commonFeatures = intersect(rownames(training), rownames(test))
+training = training[commonFeatures,]
+test = test[commonFeatures,]
+
 save(training, file="data/training.Rda")
 save(test, file="data/test.Rda")
