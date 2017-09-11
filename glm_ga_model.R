@@ -14,7 +14,7 @@ for (fileName in inputFiles) {
     runs[[fileName]] = gaRun
 }
 
-load("data/training_corrected.Rda")
+load("data/training_expanded.Rda")
 
 pheno = pData(training)
 response = pheno[[outcomeVariable]]

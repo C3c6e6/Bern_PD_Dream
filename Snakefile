@@ -9,9 +9,15 @@ rule correctFeatures:
     output: "data/{set}_corrected.Rda"
     shell: "Rscript {input.script} {input.data} {wildcards.set} {output}"
 
+rule expandFeatures:
+    input: data = rules.correctFeatures.output, script = "expand_features.R"
+    output: "data/{set}_expanded.Rda"
+    shell: "Rscript {input.script} {input.data} {wildcards.set} {output}"
+
 rule topTables:
-    input: "data/training_corrected.Rda", script = "top_tables.R"
+    input: "data/training_expanded.Rda", script = "top_tables.R"
     output: "data/topTables.Rda"
+    threads: 4
     shell: "Rscript {input.script}"
 
 rule exportTopTables:
@@ -25,7 +31,7 @@ rule exportTopTables:
         '''
 
 rule pca:
-    input: data = "data/training_corrected.Rda", f = "functions.R", 
+    input: data = "data/training_expanded.Rda", f = "functions.R", 
         script = "pca.R"
     output: "results/plots/pca.pdf"
     shell: '''
@@ -46,19 +52,19 @@ rule reduceFeatures:
         '''
 
 rule splsda:
-    input: "data/training_corrected.Rda", script = "glm_spls_model.R"
+    input: "data/training_expanded.Rda", script = "glm_spls_model.R"
     output: "data/glm_spls_professional.diagnosis_model.Rda"
     shell: "Rscript {input.script} professional.diagnosis"
 
 rule gaRun:
-    input: rules.reduceFeatures.output, rules.topTables.output, 
+    input: "data/training_expanded.Rda", rules.topTables.output, 
         script = "glm_ga_run.R"
     output: temp("data/glm_ga_run_{r}.Rda")
     shell: "Rscript {input.script} professional.diagnosis {output}"
 
 rule gaModel:
     input: runs = expand("data/glm_ga_run_{r}.Rda", r = [ "%02d" % i for i in range(4) ]),
-        dataset = "data/training_corrected.Rda", script = "glm_ga_model.R"
+        dataset = "data/training_expanded.Rda", script = "glm_ga_model.R"
     output: "data/glm_ga_professional.diagnosis_model.Rda"
     shell: "Rscript {input.script} {output} professional.diagnosis {input.runs}"
 
@@ -75,7 +81,7 @@ rule fullModel:
 
 rule ROC:
     input: rules.gaModel.output, rules.splsda.output, rules.fullModel.output,
-        rules.exhaustiveModel.output, "data/test_corrected.Rda",
+        rules.exhaustiveModel.output, "data/test_expanded.Rda",
         script = "auroc.R"
     output: "results/plots/ROCs.pdf"
     shell: '''

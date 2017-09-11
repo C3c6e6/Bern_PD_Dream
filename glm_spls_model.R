@@ -38,7 +38,7 @@ evaluateX <- function(x, previousX, modelFunction, expression, response, ncomp,
 args = commandArgs(trailingOnly = TRUE)
 outcomeVariable = args[1]
 outputFile = sprintf("data/glm_spls_%s_model.Rda", outcomeVariable)
-load("data/training.Rda")
+load("data/training_expanded.Rda")
 
 pheno = pData(training)
 response = pheno[[outcomeVariable]]

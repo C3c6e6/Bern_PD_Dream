@@ -6,7 +6,7 @@ args = commandArgs(trailingOnly = TRUE)
 outcomeVariable = "professional.diagnosis"
 outputFile = args[2]
 
-load("data/training_reduced.Rda")
+load("data/training_expanded.Rda")
 load("data/topTables.Rda")
 nFeaturesExhaustive = as.numeric(readLines("params/nFeaturesExhaustive"))
 
