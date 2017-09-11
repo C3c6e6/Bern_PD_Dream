@@ -1,4 +1,6 @@
 library(Biobase)
+library(parallel)
+options(mc.cores = 4)
 
 kruskalTopTable <- function(variable, eSet) {
     message(variable)
@@ -28,14 +30,14 @@ correlationTopTable <- function(variable, eSet) {
 
 outcomes = c(readLines("params/outcomes"))
  
-load("data/training_corrected.Rda")
+load("data/training_expanded.Rda")
 
 dataset = training
 eMatrix = exprs(dataset)
 numericOutcomes = sapply(pData(dataset)[,outcomes], is.numeric)
 topTables = c(
-    lapply(outcomes[!numericOutcomes], kruskalTopTable, dataset),
-    lapply(outcomes[numericOutcomes], correlationTopTable, dataset) )
+    mclapply(outcomes[!numericOutcomes], kruskalTopTable, dataset),
+    mclapply(outcomes[numericOutcomes], correlationTopTable, dataset) )
 names(topTables) <- c(outcomes[!numericOutcomes], 
     outcomes[numericOutcomes])
 
