@@ -26,7 +26,7 @@ pairs = as.matrix(pairs[pairs$x != pairs$y,])
 expandedMatrix = t(apply(pairs, 1, getFeatureRatio, eMatrix))
 featureTable = fData(eSet)
 
-featureNames = apply(pairs, 1, paste, collapse = "/")
+featureNames = apply(pairs, 1, paste, collapse = "..")
 expandedFeatureTable = data.frame(name = featureNames,
     type = "ratio", 
     description = sprintf("ratio between %s", 
