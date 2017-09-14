@@ -1,6 +1,8 @@
 library(Biobase)
 
-load("data/training_corrected.Rda")
+args = commandArgs(trailingOnly = TRUE)
+inputFile = args[1]
+load(inputFile)
 
 eMatrix = exprs(training)
 pheno = pData(training)

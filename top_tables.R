@@ -29,8 +29,9 @@ correlationTopTable <- function(variable, eSet) {
 }
 
 outcomes = c(readLines("params/outcomes"))
- 
-load("data/training_expanded.Rda")
+args = commandArgs(trailingOnly = TRUE)
+inputFile = args[1]
+load(inputFile)
 
 dataset = training
 eMatrix = exprs(dataset)

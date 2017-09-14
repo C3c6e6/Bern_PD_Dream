@@ -22,9 +22,16 @@ featureReductionData <- function(kMedoids, dRange = (1:50)/100) {
 }
 
 
-load("data/training_corrected.Rda")
+args = commandArgs(trailingOnly = TRUE)
+inputFile = args[1]
+
+load(inputFile)
+load("data/topTables.Rda")
+
 maxD = as.numeric(readLines("params/maxD"))
 pdf("results/plots/reduce_features.pdf", width=12, height=6)
+
+
 
 featureTable = fData(training)
 featureTypes = unique(featureTable$type)
@@ -48,6 +55,12 @@ k = reduction$k[which.max(reduction$nReduced)]
 kString = sprintf("k= %d", k)
 selectedFeatures = kMedoids$allResults[[kString]]$medoids
 dev.off()
+message(length(selectedFeatures), " features selected.")
 
+top = topTables$professional.diagnosis
+top = top[selectedFeatures,]
+featureOrder = order(top$padj, top$p)
+selectedFeatures = selectedFeatures[featureOrder]
 training = training[selectedFeatures,]
+
 save(training, file = "data/training_reduced.Rda")

@@ -3,22 +3,18 @@ library(Biobase)
 source("functions.R")
 
 args = commandArgs(trailingOnly = TRUE)
-outcomeVariable = "professional.diagnosis"
-outputFile = args[2]
+inputFile = args[1]
+outcomeVariable = args[2]
+outputFile = args[3]
 
-load("data/training_expanded.Rda")
-load("data/topTables.Rda")
+load(inputFile)
 
 pheno = pData(training)
 eMatrix = exprs(training)
-#reciproqueMatrix = 1/eMatrix
-#rownames(reciproqueMatrix) = paste0("rec_", rownames(eMatrix))
-inputData = cbind(pheno, t(eMatrix))#, t(reciproqueMatrix))
+inputData = cbind(pheno, t(eMatrix))
 family = if (is.numeric(inputData[[outcomeVariable]])) "gaussian" else 
     "binomial"
-#featureNames = c(rownames(eMatrix))#, rownames(reciproqueMatrix))
-varTopTable = topTables[[outcomeVariable]][rownames(training),]
-featureNames = rownames(training)[order(varTopTable$padj, varTopTable$p)]
+featureNames = rownames(training)
 
 gaRun = glmulti(outcomeVariable, featureNames[1:30], level=1, data = inputData,
     method="g", family = family, crit = "aicc", marginality = TRUE, 

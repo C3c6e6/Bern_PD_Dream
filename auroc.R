@@ -14,9 +14,12 @@ getAUC <- function(model, testSet, title) {
     auc@y.values
 }
 
-load("data/test_corrected.Rda")
+args = commandArgs(trailingOnly = TRUE)
+inputFile = args[1]
+outputFile = args[2]
+load(inputFile)
 
-pdf("results/plots/ROCs.pdf")
+pdf(outputFile)
 load("data/glm_spls_professional.diagnosis_model.Rda")
 splsAUC = getAUC(model, test, "mixOmics sPLS-DA")
 message("sPLS-DA model: ", splsAUC)
