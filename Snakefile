@@ -1,6 +1,6 @@
 
 rule dataset:
-    input: "data/features_clip_v2.Rda", "functions.R", script = "dataset.R"
+    input: "data/features_clip_v4.Rda", "functions.R", script = "dataset.R"
     output: expand("data/{set}.Rda", set = [ "training", "test" ] )
     shell: "Rscript {input.script}"
 
@@ -15,10 +15,10 @@ rule expandFeatures:
     shell: "Rscript {input.script} {input.data} {wildcards.set} {output}"
 
 rule topTables:
-    input: "data/training_expanded.Rda", script = "top_tables.R"
+    input: data = "data/training_expanded.Rda", script = "top_tables.R"
     output: "data/topTables.Rda"
     threads: 4
-    shell: "Rscript {input.script}"
+    shell: "Rscript {input.script} {input.data}"
 
 rule exportTopTables:
     input: data=rules.topTables.output, script = "export_top_tables.R"
@@ -30,8 +30,14 @@ rule exportTopTables:
         ssconvert --merge-to {output} $d/*.txt
         '''
 
+rule filterFeatures:
+    input: rules.topTables.output, "params/nFeatures", 
+        data = rules.expandFeatures.output, script = "filter_features.R"
+    output: "data/{set}_filtered.Rda"
+    shell: "Rscript {input.script} {input.data} {wildcards.set} {output}"
+
 rule pca:
-    input: data = "data/training_expanded.Rda", f = "functions.R", 
+    input: data = "data/training_filtered.Rda", f = "functions.R", 
         script = "pca.R"
     output: "results/plots/pca.pdf"
     shell: '''
@@ -41,53 +47,51 @@ rule pca:
         '''
 
 rule reduceFeatures:
-    input: "data/training_corrected.Rda", "params/maxD", 
-        script = "reduce_features.R"
+    input: data = "data/training_filtered.Rda", params = "params/maxD", 
+        topTables = rules.topTables.output, script = "reduce_features.R"
     output: plots = "results/plots/reduce_features.pdf", 
         data = "data/training_reduced.Rda"
     shell: '''
         d=`dirname {output.plots}`
         mkdir -p $d
-        Rscript {input.script}
+        Rscript {input.script} {input.data}
         '''
 
 rule splsda:
-    input: "data/training_expanded.Rda", script = "glm_spls_model.R"
+    input: data = "data/training_reduced.Rda", script = "glm_spls_model.R"
     output: "data/glm_spls_professional.diagnosis_model.Rda"
-    shell: "Rscript {input.script} professional.diagnosis"
+    shell: "Rscript {input.script} {input.data} professional.diagnosis"
 
 rule gaRun:
-    input: "data/training_expanded.Rda", rules.topTables.output, 
-        script = "glm_ga_run.R"
+    input: data =  "data/training_reduced.Rda", script = "glm_ga_run.R"
     output: temp("data/glm_ga_run_{r}.Rda")
-    shell: "Rscript {input.script} professional.diagnosis {output}"
+    shell: "Rscript {input.script} {input.data} professional.diagnosis {output}"
 
 rule gaModel:
     input: runs = expand("data/glm_ga_run_{r}.Rda", r = [ "%02d" % i for i in range(4) ]),
-        dataset = "data/training_expanded.Rda", script = "glm_ga_model.R"
+        dataset = "data/training_reduced.Rda", script = "glm_ga_model.R"
     output: "data/glm_ga_professional.diagnosis_model.Rda"
     shell: "Rscript {input.script} {output} professional.diagnosis {input.runs}"
 
 rule exhaustiveModel:
-    input: rules.reduceFeatures.output, rules.topTables.output,
-        script = "glmulti_exhaustive.R"
+    input: data = "data/training_reduced.Rda", script = "glmulti_exhaustive.R"
     output: "data/glm_exhaustive.Rda"
-    shell: "Rscript {input.script}"
+    shell: "Rscript {input.script} {input.data} professional.diagnosis {output}"
 
 rule fullModel:
-    input: "data/training_corrected.Rda", script = "full_model.R"
+    input: data = "data/training_reduced.Rda", script = "full_model.R"
     output: "data/glm_full.Rda", "data/glm_stepped.Rda"
-    shell: "Rscript {input.script}"
+    shell: "Rscript {input.script} {input.data}"
 
 rule ROC:
     input: rules.gaModel.output, rules.splsda.output, rules.fullModel.output,
-        rules.exhaustiveModel.output, "data/test_expanded.Rda",
+        rules.exhaustiveModel.output, data = "data/test_expanded.Rda",
         script = "auroc.R"
     output: "results/plots/ROCs.pdf"
     shell: '''
         d=`dirname {output}`
         mkdir -p $d
-        Rscript {input.script}
+        Rscript {input.script} {input.data} {output}
         '''
 
 rule all:
