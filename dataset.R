@@ -39,19 +39,44 @@ table2ExpressionSet <- function(featureTab, motionFeatures) {
     training
 }
 
-load("data/features_clip_v2.Rda")
+load("data/features_clip_v4.Rda")
 
 rownames(featureTab) <- featureTab$recordId_event
-colnames(featureTab) <- gsub("uAccel_Outbnd_", "", 
+colnames(featureTab) <- gsub("u?Accel_Outbnd_", "", 
     make.names(colnames(featureTab)))
+featureTab$age = as.numeric(featureTab$age)
+featureTab$are.caretaker = as.logical(featureTab$are.caretaker)
+featureTab$deep.brain.stimulation = 
+    as.logical(featureTab$deep.brain.stimulation)
+featureTab$diagnosis.year = as.numeric(featureTab$diagnosis.year)
+featureTab$professional.diagnosis = 
+    as.logical(featureTab$professional.diagnosis)
+featureTab$home.usage = as.logical(featureTab$home.usage)
+featureTab$last.smoked = as.numeric(featureTab$last.smoked)
+featureTab$medical.usage = as.logical(featureTab$medical.usage)
+featureTab$medical.usage.yesterday = 
+    as.logical(featureTab$medical.usage.yesterday)
+featureTab$medication.start.year = as.numeric(featureTab$medication.start.year)
+featureTab$medication.start.year[featureTab$medication.start.year == 0] = NA
+featureTab$onset.year = as.numeric(featureTab$onset.year)
+featureTab$packs.per.day = as.numeric(featureTab$packs.per.day)
+featureTab$past.participation = as.logical(featureTab$past.participation)
+featureTab$phone.usage = as.logical(featureTab$phone.usage)
+featureTab$smoked = as.logical(featureTab$smoked)
+featureTab$surgery = as.logical(featureTab$surgery)
+featureTab$video.usage = as.logical(featureTab$video.usage)
+featureTab$years.smoking =as.numeric(featureTab$years.smoking)
+
 featureTab$medTimepoint = sub(".+don't.+", "none", featureTab$medTimepoint)
 featureTab$medTimepoint = sub(".+(before|after).+", "\\1", 
     featureTab$medTimepoint)
-featureTab = 
-    featureTab[featureTab$medTimepoint %in% c("before", "none"),]
-featureTab = featureTab[!featureTab$deep.brain.stimulation,]
-exclude = featureTab$professional.diagnosis != 
-    (featureTab$medTimepoint == "before") & is.na(featureTab$health.history)
+
+naRecords = is.na(featureTab$medTimepoint) | 
+    is.na(featureTab$deep.brain.stimulation) | 
+    is.na(featureTab$professional.diagnosis)
+featureTab = featureTab[!naRecords,]
+exclude = !featureTab$professional.diagnosis != 
+    (featureTab$medTimepoint == "none") 
 featureTab = featureTab[!exclude,]
 
 featureTab$phoneInf_event = sub("\\s*\\(.+", "", featureTab$phoneInf_event)
@@ -75,9 +100,12 @@ for (feature in motionFeatures) {
 }
 motionFeatures = colnames(featureTab)[38:ncol(featureTab)] #update motionFeatures
 
-training = table2ExpressionSet(featureTab[!duplicated(featureTab$healthCode),],
+trainingObservations =
+    rownames(featureTab[!duplicated(featureTab$healthCode),])
+testObservations = rownames(featureTab) %d% trainingObservations
+training = table2ExpressionSet(featureTab[trainingObservations,],
     motionFeatures)
-test = table2ExpressionSet(featureTab[duplicated(featureTab$healthCode),],
+test = table2ExpressionSet(featureTab[testObservations,],
     motionFeatures)
 
 commonFeatures = intersect(rownames(training), rownames(test))
