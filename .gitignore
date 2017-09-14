@@ -22,3 +22,4 @@ data/glm_full.Rda
 data/glm_stepped.Rda
 data/test_expanded.Rda
 data/training_expanded.Rda
+data/training_filtered.Rda
