@@ -25,6 +25,7 @@ rule exportTopTables:
     output: "results/top_tables/top_tables.xlsx"
     shell: '''
         d=`dirname {output}`
+        rm -fr $d
         mkdir -p $d
         Rscript {input.script} {input.data} $d
         ssconvert --merge-to {output} $d/*.txt
