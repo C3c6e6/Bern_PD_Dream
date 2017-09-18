@@ -1,4 +1,5 @@
 library(Biobase)
+library(e1071)
 source("functions.R")
 
 getFeatureRatio <- function(pair, eMatrix) {
@@ -7,7 +8,13 @@ getFeatureRatio <- function(pair, eMatrix) {
     ratio = eMatrix[fX,] / eMatrix[fY,]
     maxValue = max(ratio[!is.infinite(ratio)])
     ratio[is.infinite(ratio)] = maxValue
-    ratio
+    transforms = list()
+    transforms$log = logTransform(ratio)
+    transforms$none = ratio
+    transforms$sigmoid = sigmoid(ratio)
+    kurtosisValues = sapply(transforms, kurtosis)
+    bestTransform = which.min(kurtosisValues)
+    transforms[[bestTransform]]
 }
 args = commandArgs(trailingOnly = TRUE)
 inputFile = args[1]
