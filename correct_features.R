@@ -17,7 +17,7 @@ getModelData <- function(featureValues, pheno) {
 }
 
 getFormula <- function(modelData) {
-    glmultiRun = glmulti("feature", c("age", "gender", "phoneInf_event"), 
+    glmultiRun = glmulti("feature", c("age", "gender", "phoneinf_event"), 
         modelData, method="h", level=2, marginality = TRUE, report = FALSE)
     paste(summary(glmultiRun)$bestmodel, collapse = "")
 }

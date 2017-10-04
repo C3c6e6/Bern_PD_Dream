@@ -1,6 +1,6 @@
 
 rule dataset:
-    input: "data/features_clip_v4.Rda", "functions.R", script = "dataset.R"
+    input: "data/featureTabTraining_Meta.Rda", "functions.R", script = "dataset.R"
     output: expand("data/{set}.Rda", set = [ "training", "test" ] )
     shell: "Rscript {input.script}"
 
@@ -10,7 +10,8 @@ rule correctFeatures:
     shell: "Rscript {input.script} {input.data} {wildcards.set} {output}"
 
 rule expandFeatures:
-    input: data = rules.correctFeatures.output, script = "expand_features.R"
+    input: data = rules.correctFeatures.output, params = "params/polyRange", 
+        script = "expand_features.R"
     output: "data/{set}_expanded.Rda"
     shell: "Rscript {input.script} {input.data} {wildcards.set} {output}"
 
@@ -38,7 +39,7 @@ rule filterFeatures:
     shell: "Rscript {input.script} {input.data} {wildcards.set} {output}"
 
 rule pca:
-    input: data = "data/training_filtered.Rda", f = "functions.R", 
+    input: data = "data/training_reduced.Rda", f = "functions.R", 
         script = "pca.R"
     output: "results/plots/pca.pdf"
     shell: '''
@@ -95,5 +96,11 @@ rule ROC:
         Rscript {input.script} {input.data} {output}
         '''
 
+rule submission:
+    input: rules.ROC.output, script = "extract_features.R"
+    output: "results/submission.csv"
+    shell: "Rscript {input.script}"
+
 rule all:
-    input: rules.ROC.output, rules.pca.output, rules.exportTopTables.output
+    input: rules.ROC.output, rules.pca.output, rules.exportTopTables.output,
+        rules.submission.output

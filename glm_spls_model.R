@@ -81,9 +81,9 @@ for (n in 1:nComp) {
     message("best X for comp ", n, ": ", optimalX)
     keepX = c(keepX, optimalX)
 }
-finalModel = sparseFunction(inputData, response, keepX=keepX, ncomp=nComp)
-selectedFeatures = if (!"splsda" %in% class(finalModel)) 
-    selectVar(finalModel)$X$name else selectVar(finalModel)$name
+splsdaModel = sparseFunction(inputData, response, keepX=keepX, ncomp=nComp)
+selectedFeatures = if (!"splsda" %in% class(splsdaModel)) 
+    selectVar(splsdaModel)$X$name else selectVar(splsdaModel)$name
 
 if (length(selectedFeatures) > 0) {
     if (length(selectedFeatures) == 1) {
@@ -100,4 +100,4 @@ if (length(selectedFeatures) > 0) {
     message("No features selected")
     model = getNullModel(outcomeVariable, pheno[sampleSelection,])
 }
-save(model, file = outputFile)
+save(splsdaModel, model, file = outputFile)

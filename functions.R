@@ -66,3 +66,7 @@ logTransform <- function(x, b = 2) {
 sigmoid <- function(x) {
     x/(1+abs(x))
 }
+
+logistic = function(x) {
+    1/(1+exp(-x))
+}

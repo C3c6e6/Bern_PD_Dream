@@ -1,5 +1,6 @@
 library(ROCR)
 library(Biobase)
+library(mixOmics)
 
 getAUC <- function(model, testSet, title) {
     features = all.vars(as.formula(model$formula))[-1]
@@ -21,8 +22,9 @@ load(inputFile)
 
 pdf(outputFile)
 load("data/glm_spls_professional.diagnosis_model.Rda")
-splsAUC = getAUC(model, test, "mixOmics sPLS-DA")
-message("sPLS-DA model: ", splsAUC)
+testData = cbind(pData(test), t(exprs(test)))
+auroc(splsdaModel, newdata = testData[,colnames(splsdaModel$X)], 
+    factor(testData$professional.diagnosis), roc.comp = splsdaModel$ncomp)
 
 load("data/glm_ga_professional.diagnosis_model.Rda")
 gaAUC = getAUC(model, test, "glmulti GA")
@@ -39,5 +41,7 @@ message("all features: ", gaAUC)
 load("data/glm_stepped.Rda")
 gaAUC = getAUC(model, test, "stepped")
 message("stepped model: ", gaAUC)
+
+
 
 dev.off()

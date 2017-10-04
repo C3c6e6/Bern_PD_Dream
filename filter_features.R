@@ -10,6 +10,8 @@ nFeatures = as.numeric(readLines("params/nFeatures"))
 load(inputFile)
 eSet = get(objectName)
 
+nFeatures = min(nFeatures, nrow(eSet))
+
 sortedFeatures = rownames(topTables$professional.diagnosis)
 eSet = eSet[sortedFeatures[1:nFeatures],]
 

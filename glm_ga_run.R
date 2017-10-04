@@ -15,8 +15,9 @@ inputData = cbind(pheno, t(eMatrix))
 family = if (is.numeric(inputData[[outcomeVariable]])) "gaussian" else 
     "binomial"
 featureNames = rownames(training)
+n = min(length(featureNames), 30)
 
-gaRun = glmulti(outcomeVariable, featureNames[1:30], level=1, data = inputData,
+gaRun = glmulti(outcomeVariable, featureNames[1:n], level=1, data = inputData,
     method="g", family = family, crit = "aicc", marginality = TRUE, 
     report = FALSE)
 

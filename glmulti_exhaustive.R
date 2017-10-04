@@ -17,7 +17,8 @@ family = if (is.numeric(inputData[[outcomeVariable]])) "gaussian" else
     "binomial"
 
 featureNames = rownames(training)
-includedFeatures = featureNames[1:nFeaturesExhaustive]
+n = min(nFeaturesExhaustive, length(featureNames))
+includedFeatures = featureNames[1:n]
 
 glmultiRun = glmulti(outcomeVariable, includedFeatures, level=1, data = inputData,
     method="h", family = family, crit = "aicc", marginality = TRUE, 

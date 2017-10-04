@@ -1,10 +1,9 @@
-phoneInf_event
-medTimepoint
+phoneinf_event
+medtimepoint
 age
 gender
 packs.per.day
 professional.diagnosis
 smoked
-surgery
 years.smoking
 timeSinceOnset

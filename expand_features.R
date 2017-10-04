@@ -1,5 +1,6 @@
 library(Biobase)
 library(e1071)
+library(scales)
 source("functions.R")
 
 getFeatureRatio <- function(pair, eMatrix) {
@@ -16,6 +17,22 @@ getFeatureRatio <- function(pair, eMatrix) {
     bestTransform = which.min(kurtosisValues)
     transforms[[bestTransform]]
 }
+
+polyNFeature <- function(x, p) x^p
+
+getExpandedMatrix <- function(p, eMatrix) {
+    expandedMatrix = t(apply(eMatrix, 1, polyNFeature, p))
+}
+
+getExpandedFeatureTable <- function(expandedMatrix, p) {
+    featureNames = sprintf("%s_%d", rownames(eMatrix), p)
+    expandedFeatureTable = data.frame(name = featureNames,
+        type = "polynomial", 
+        description = sprintf("%s power of %s", ordinal(p), rownames(eMatrix)),
+        correctionFormula = NA, stringsAsFactors = FALSE, 
+        row.names = featureNames)
+}
+
 args = commandArgs(trailingOnly = TRUE)
 inputFile = args[1]
 objectName = args[2]
@@ -26,21 +43,16 @@ eSet = get(objectName)
 
 eMatrix = exprs(eSet)
 
-pairs = expand.grid(x = rownames(eMatrix), y = rownames(eMatrix), 
-    stringsAsFactors = FALSE)
-pairs = as.matrix(pairs[pairs$x != pairs$y,])
-
-expandedMatrix = t(apply(pairs, 1, getFeatureRatio, eMatrix))
 featureTable = fData(eSet)
 
-featureNames = apply(pairs, 1, paste, collapse = "..")
-expandedFeatureTable = data.frame(name = featureNames,
-    type = "ratio", 
-    description = sprintf("ratio between %s", 
-        apply(pairs, 1, paste, collapse = " and ")),
-    correctionFormula = NA, stringsAsFactors = FALSE, 
-    row.names = featureNames)
-rownames(expandedMatrix) <- featureNames
+polyRange = as.integer(readLines("params/polyRange"))
+
+expandedMatrices = lapply(polyRange, getExpandedMatrix, eMatrix)
+expandedMatrix = do.call(rbind, expandedMatrices)
+expandedFeatureTable <- do.call(rbind, 
+    mapply(getExpandedFeatureTable, expandedMatrices, polyRange, SIMPLIFY = FALSE))
+
+rownames(expandedMatrix) <- rownames(expandedFeatureTable)
 newFeatureTable = rbind(featureTable, expandedFeatureTable)
 newEMatrix = rbind(eMatrix, expandedMatrix)
 
